@@ -15,14 +15,15 @@ Transformer本质是一个seq2seq model，其中大量地使用了self_attention
 
 谷歌在attention is all you need中提出self-attention的概念，可以取代RNN原来可以做的事情。可以简单认为self-attention是一种新的层，跟RNN一样，输入一个序列，输出一个序列。同时，具有双向RNN的特点，即输出序列的每一个节点输出的时候，网络就已经见过所有输入的序列节点信息了。
 
-所谓的Transformer，即
+所谓的Transformer，即采用了self-attention的seq2seq，而Bert则是利用Transformer的encoder部分的输出。
+
 ## 网络结构与数学表达
 这个Self-attention到底是什么样的结构？
 
-1. 设输入的序列为$\{x_1,x_2,x_3,\cdots,x_n\}$，那么每一层首先经过一轮embedding的映射，即矩阵相乘$a_i=Wx_i$，将$x_i$转化为$\{a_1,a_2,a_3,\cdots,a_n\}$，然后输入self-attention 层当中。
+1.设输入的序列为$\{x_1,x_2,x_3,\cdots,x_n\}$，那么每一层首先经过一轮embedding的映射，即矩阵相乘$a_i=Wx_i$，将$x_i$转化为$\{a_1,a_2,a_3,\cdots,a_n\}$，然后输入self-attention 层当中。
 
 
-2. 在self-attention中，则将$a_i$乘以三种不同的transformation/matrix，产生三种不同的vector。这三种vector分别以$q_i,k_i,v_i$。这三个vector的含义（功能）分别为：
+2.在self-attention中，则将$a_i$乘以三种不同的transformation/matrix，产生三种不同的vector。这三种vector分别以$q_i,k_i,v_i$。这三个vector的含义（功能）分别为：
    
    - q: query（用来跟其他的序列节点进行匹配）
    $$
@@ -39,4 +40,17 @@ Transformer本质是一个seq2seq model，其中大量地使用了self_attention
    v_i=W_v a_i
    $$
 
-3. 所谓的匹配，是怎么匹配呢？接下来，
+3.所谓的匹配，是怎么匹配呢？接下来，对于每一个节点的$q_i$，则与每一个其它节点的$w_i$做attention。简单来说attention，就是输入2两个向量，然后输出一个分数，代表2个向量有多匹配。不过如何达成上边的效果，则有各式各样不同的做法。
+   
+在self-attetion layer中，实现方式叫Scaled Dot-Product Attention，即将$q_i$和$w_i$做dot product（$q_i$和$w_i$的维度一致）,再用$q_i$和$w_i$的维度$d$的平方根来归一化：
+$$
+   a_{1,i}=(q_1\cdot k_i) / \sqrt{d}
+$$
+为什么要除以$\sqrt{d}$呢，self-attention的论文中有一个简单的注脚...
+
+当得到所有的$\{a_{1,1},a_{1,2},\cdots,a_{1,n}\}$之后，则通过一个softmax进行映射
+$$
+\hat{a}_{1,i}=\exp({a_{1,i}})/\sum^{i=n}_{i=1}\exp(a_{1,i})
+$$
+
+4.得到了所有的$$
