@@ -53,4 +53,26 @@ $$
 \hat{a}_{1,i}=\exp({a_{1,i}})/\sum^{i=n}_{i=1}\exp(a_{1,i})
 $$
 
-4.得到了所有的$$
+4.得到了所有的$\hat{a}_{j,i}$之后，再与节点信息权重$v_i$做weighted sum，得到输出节点$b_{j}=\sum_{i} \hat{a}_{j,i}\cdot v_{i}$。
+
+到这里，可以注意到，为了产生输出序列的某一个节点$b_{j}$，观察到了整个序列的信息，这样对于输入序列的任何一个节点，不管远近，都通过transformation+attention的方式，被$b_{j}$观察到了。这样的设计，也是self-attention机制对于处理长序列信息能力强大的来源之一。
+
+另外，还能够注意到的是，输出序列的所有输出节点$\{b_{j}\}$，都可以同时并行计算出来，这样的方式将序列模型并行化。
+
+
+**self attention 进行平行化的方式**
+
+对于$q_i=W_q\cdot a_i$，将运算的参数进行矩阵沿列方向（axis=1）拼接，得到相同的算式：
+$$
+\underbrace{[q_1,q_2,q_3,\cdots,q_n]}_{Q}=W_q\cdot \underbrace{[a_1,a_2,a_3,\cdots,a_n]}_{I}
+$$
+
+以此类推，对于$k_i=W_k\cdot a_i$，将运算的参数进行矩阵拼接，得到相同的算式：
+$$
+\underbrace{[k_1,k_2,k_3,\cdots,k_n]}_{K}=W_k\cdot \underbrace{[a_1,a_2,a_3,\cdots,a_n]}_{I}
+$$
+
+对于$v_i=W_v\cdot a_i$，将运算的参数进行矩阵拼接，得到相同的算式：
+$$
+\underbrace{[v_1,v_2,v_3,\cdots,v_n]}_{V}=W_v\cdot \underbrace{[a_1,a_2,a_3,\cdots,a_n]}_{I}
+$$
