@@ -1,7 +1,7 @@
-# Transformer和Bert
+# Transformer
 
 ## 基本概念
-Transformer本质是一个seq2seq model，其中大量地使用了self_attention layer.
+Transformer本质是一个seq2seq model，其中大量地使用了self_attention layer。
 
 对于seq2seq中的处理序列的网络单元结构，最基本常见的，是RNN。
 
@@ -9,9 +9,9 @@ Transformer本质是一个seq2seq model，其中大量地使用了self_attention
 
 如果RNN是单向的single directional，那么在输出$b_0$时，网络已经输入过$a_0$, 在输出$b_1$时，网络已经输入过$a_0,a_1$, 依次类推。
 
-如果RNN时双向的bidirectional，那么即指在输出每一个$b_0,b_1,b_2,\cdots,b_n$的时候，每一次输出前，都已经输入过所有的$a_0,a_1,a_2,\cdots,a_n$。v
+如果RNN时双向的bidirectional，那么即指在输出每一个$b_0,b_1,b_2,\cdots,b_n$的时候，每一次输出前，都已经输入过所有的$a_0,a_1,a_2,\cdots,a_n$。
 
-但RNN不容易并行化，且对于比较长的序列也会有早前的信息逐渐被弱化的情况。采用LSTM应该会有所缓解，但是attention结构的发明进一步改进了这个问题。后来发展出的self-attention，则是完全取代了RNN，可以直接作为
+但RNN不容易并行化，且对于比较长的序列也会有早前的信息逐渐被弱化的情况。采用LSTM应该会有所缓解，但是attention结构的发明进一步改进了这个问题。后来发展出的self-attention，则是完全取代了RNN，可以直接作为编码序列数据的更优网络结构。
 
 谷歌在attention is all you need中提出self-attention的概念，可以取代RNN原来可以做的事情。可以简单认为self-attention是一种新的层，跟RNN一样，输入一个序列，输出一个序列。同时，具有双向RNN的特点，即输出序列的每一个节点输出的时候，网络就已经见过所有输入的序列节点信息了。
 
@@ -132,7 +132,7 @@ $$
 
 在实际应用的架构中，可以把$q_i$、$k_i$以及$v_i$，分别再乘以两个（或m个）不同的矩阵，从而“分裂”为不同的head。
 
-例如$q_i$可以分裂为$q_{i,1}$和q_{i,2}两个head，之后的运算中，$q_{i,1}$只和$k_{i,1}$,v_{i,1}进行交互运算，最后两个head可以得到两种输出$b_{i,1}$和b_{i,2}。
+例如$q_i$可以分裂为$q_{i,1}$和$q_{i,2}$两个head，之后的运算中，$q_{i,1}$只和$k_{i,1}$,$v_{i,1}$进行交互运算，最后两个head可以得到两种输出$b_{i,1}$和$b_{i,2}$。
 
 这样的设计，可以让不同的head结构，关注解析序列中不同的部分。有的head可以看本地的信息，或者有的head可以看到长序列上的信息。从而增强解析序列的能力。
 
@@ -169,4 +169,67 @@ p_i
 \end{vmatrix}}_{e_i}
 $$
 
-对于$W_p$，当然可以训练，但是根据一些之前卷积神经网络的一些经验，去训练$W_p$的效果并不怎么好
+对于$W_p$，当然可以训练，但是根据一些之前卷积神经网络构造seq2seq的一些经验，去训练$W_p$的效果并不怎么好。于是这里positional-encoding的向量是通过认为构造的，构造的向量可视化情况如下所示：
+
+![alt positional-encoding](transformer-fig/../transformer-figs/attention-is-all-you-need-positional-encoding.png)
+
+from [2]
+
+至于为什么这么构造，以及如何构造出更好的位置编码向量，这个有待进一步的研究。
+
+## Transformer
+通过上面的铺垫，可以比较细节地了解transformer中用到的self-attention到底是怎样的一个矩阵变换形式。那么transformer作为一个seq2seq的算法，总体的形式是什么样的呢？从大的视角来看，对于原始的Seq2Seq搭配attention的做法，曾经是用RNN作为编码序列信息的元件，那么现在我们可以用self-attention来替代RNN：
+
+![alt seq2seq-self-attention](transformer-fig/../transformer-figs/seq2seq-self-attention-big-picture.png)
+
+from [1]
+
+在参考文献[3]中，google则给出了一个比较形象的encoding、decoding过程中的参数交互过程，可以参考一下。
+
+对于tansformer，经常可以见到的示意图如下，在经过上边的拆解后，可以对这个复杂的图有一个更清晰的认识。
+![alt transformer-0](transformer-fig/../transformer-figs/transformer-0.png)
+![alt transformer-0](transformer-fig/../transformer-figs/transformer-1.png)
+
+from [1]
+
+- 这里首先可以看左边编码器encoder的部分，输入input会通过embedding进行编码，然后结合postional-encoding，作为multi-head attention的输入，到这里前边都有详细描述。
+
+   对于Add & Norm部分，则是将multi-head的输入$\{a_1,a_2,\cdots \}$和multi-head的输出$\{b_1,b_2,\cdots \}$通过向量相加加起来，即$a_i+b_i=b'_i$。随后，再将$b'_i$进行[layer normalization](https://arxiv.org/abs/1607.06450)。
+
+   layer normalization与batch normalization有什么不同？
+
+   batch normalization，即是将同一个batch中的同一个特征维度的数值统计分布，调整为均值为0，方差为1的高斯分布。
+
+   layer normalization，则是将同一个batch的同一个样本的所有不同维度的数值统计分布，调整为均值为0，方差为1的高斯分布。这一归一化主要在循环神经网络中经常使用，在self-attention的情况下，同样可以使用这样的norm方法。
+
+   Add & Norm部分之后，会输入一个前馈神经网络，输出再进入一个Add & Norm的部分，之后进入到decoder当中。
+
+- 对于decoder部分，其输入是上一个时序的输出，同样通过embedding和positional encoding进入到重复N次的灰色block中。
+
+   这里接下来跟encoder不同的是，接下来的流程首先会进入一个masked multi-head attention。这里的含义是，attention的映射操作只会考虑到这步时已经生成的sequence的multi-head，而不会去对还没有生成的sequence去做attention。
+
+   接下来，在经过一个Add & Norm的处理后，与encoder部分的输出一起，输入到一个multi-head attention当中，最后在经过前馈神功网络以及softmax的映射，得到最终输出的序列。
+
+## transformer思想可以用在哪里？
+
+- 要用到seq2seq的场景，可以用transformer替换
+  
+   https://arxiv.org/abs/1801.10198
+
+- Universal transformer
+
+   https://ai.googleblog.com/2018/08/moving-beyond-translation-with.html
+
+- self-attention也可以用在图像上
+
+   https://arxiv.org/abs/1805.08318
+
+
+
+## 参考文献
+
+[1] [李宏毅machine learning2020](http://speech.ee.ntu.edu.tw/~tlkagk/courses_ML20.html)
+
+[2] [jalammar-blog](http://jalammar.github.io/illustrated-transformer/)
+
+[3] [google-transformer-blog](https://ai.googleblog.com/2017/08/transformer-novel-neural-network.html)
