@@ -46,7 +46,7 @@ Transformer本质是一个seq2seq model，其中大量地使用了self_attention
 $$
    \alpha_{1,i}=(q_1\cdot k_i) / \sqrt{d}
 $$
-为什么要除以$\sqrt{d}$呢，self-attention的论文中有一个简单的注脚...
+为什么要除以$\sqrt{d}$呢，self-attention的论文中有一个简单的注脚，注脚中假设$q_i$和$k_i$向量中每一个参数都是来自于均值为0，方差为1的分布，故$q_1\cdot k_i$为一个均值为0，方差为$\sqrt{d}$的分布，所以这里对方差进行归一化，即除以$\sqrt{d}$。
 
 当得到所有的$\{\alpha_{1,1},\alpha_{1,2},\cdots,\alpha_{1,n}\}$之后，则通过一个softmax进行映射
 $$
